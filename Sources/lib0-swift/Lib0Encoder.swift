@@ -133,11 +133,11 @@ public final class Lib0Encoder {
         }
     }
 
-    public func writeVarString(_ value: String) {
-        self.writeVarData(value.data(using: .utf8)!)
+    public func writeString(_ value: String) {
+        self.writeData(value.data(using: .utf8)!)
     }
 
-    public func writeVarData(_ data: Data) {
+    public func writeData(_ data: Data) {
         self.writeUInt(UInt(data.count))
         self.writeOpaqueSizeData(data)
     }
@@ -154,20 +154,20 @@ public final class Lib0Encoder {
         if rightCopyLen > 0 {
             self.buffers.append(self.currentBuffer)
             self.currentBuffer = Data(repeating: 0, count: max(bufferLen * 2, rightCopyLen))
-            let subdata = data[0..<leftCopyLen]
+            let subdata = data[leftCopyLen...]
             self.currentBuffer[0..<subdata.count] = subdata
             self.currentBufferPosition = rightCopyLen
         }
     }
     
     public func writeFloat(_ value: Float) {
-        var value = value.bitPattern
+        let value = value.bitPattern
         for i in (0..<4).reversed() {
             self.writeUInt8(UInt8((value >> (8 * i)) & 0b1111_1111))
         }
     }
     public func writeDouble(_ value: Double) {
-        var value = value.bitPattern
+        let value = value.bitPattern
         for i in (0..<8).reversed() {
             self.writeUInt8(UInt8((value >> (8 * i)) & 0b1111_1111))
         }
@@ -177,7 +177,7 @@ public final class Lib0Encoder {
         switch (data) {
         case let data as String:
             self.writeUInt8(119)
-            self.writeVarString(data)
+            self.writeString(data)
         case let data as Int:
             self.writeUInt8(125)
             self.writeInt(data)
@@ -191,12 +191,12 @@ public final class Lib0Encoder {
             self.writeUInt8(118)
             self.writeUInt(UInt(data.count))
             for (key, value) in data {
-                self.writeVarString(key)
+                self.writeString(key)
                 self.writeAny(value)
             }
         case let data as Data:
             self.writeUInt8(116)
-            self.writeVarData(data)
+            self.writeData(data)
             
         case let data as [Any]:
             self.writeUInt8(117)
