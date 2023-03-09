@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum Lib0DecoderError: String, LocalizedError {
+public enum Lib0DecoderError: String, LocalizedError {
     case integerOverflow = "Integer overflow."
     case unexpectedEndOfArray = "Unexpected End of Array."
     case unkownStringEncodingType = "Unkown string encoding type."
@@ -15,86 +15,72 @@ enum Lib0DecoderError: String, LocalizedError {
     case typeMissmatch = "Type missmatch."
 }
 
-/// A Decoder handles the decoding of an Data
-final class Lib0Decoder {
-    
-    /// Decoding target.
-    let data: Data
-    
-    // Current decoding position.
+public final class Lib0Decoder {
+
+    private let data: Data
     private var position: Int = 0
     
-    init(data: Data) { self.data = data }
+    public init(data: Data) { self.data = data }
     
-    var hasContent: Bool {
+    public var hasContent: Bool {
         return self.position != data.count
     }
     
-    func readData(count: Int) -> Data {
+    public func readData(count: Int) -> Data {
         defer { position += count }
         return data[position..<position+count]
     }
-    func readVarData() throws -> Data {
+    public func readVarData() throws -> Data {
         let count = try Int(self.readUInt())
         return self.readData(count: count)
     }
-    func readTailAsData() -> Data {
+    public func readTailAsData() -> Data {
         return self.readData(count: data.count - position)
     }
     
-    
-    func skip8() {
+    public func skip8() {
         self.position += 1
     }
-    func readUInt8() -> UInt8 {
+    public func readUInt8() -> UInt8 {
         defer { self.position += 1 }
         return self.data[self.position]
     }
-    func readUInt16() -> UInt16 {
+    public func readUInt16() -> UInt16 {
         defer { self.position += 2 }
-        let t1 = (UInt16(self.data[self.position + 0]) << UInt16(8*0))
-        let t2 = (UInt16(self.data[self.position + 1]) << UInt16(8*1))
-        
-        return t1 + t2
+        var value: UInt16 = 0
+        for i in 0..<2 { value += UInt16(self.data[self.position + i]) << UInt16(8*i) }
+        return value
     }
-    func readUInt32() -> UInt32 {
+    public func readUInt32() -> UInt32 {
         defer { self.position += 4 }
-        let t1 = (UInt32(self.data[self.position + 0]) << UInt32(8*0))
-        let t2 = (UInt32(self.data[self.position + 1]) << UInt32(8*1))
-        let t3 = (UInt32(self.data[self.position + 2]) << UInt32(8*2))
-        let t4 = (UInt32(self.data[self.position + 3]) << UInt32(8*3))
-        
-        return t1 + t2 + t3 + t4
+        var value: UInt32 = 0
+        for i in 0..<4 { value += UInt32(self.data[self.position + i]) << UInt32(8*i) }
+        return value
     }
-    func readUInt64() -> UInt64 {
+    public func readUInt64() -> UInt64 {
         defer { self.position += 8 }
-        let t1 = (UInt64(self.data[self.position + 0]) << UInt64(8*0))
-        let t2 = (UInt64(self.data[self.position + 1]) << UInt64(8*1))
-        let t3 = (UInt64(self.data[self.position + 2]) << UInt64(8*2))
-        let t4 = (UInt64(self.data[self.position + 3]) << UInt64(8*3))
-        let t5 = (UInt64(self.data[self.position + 4]) << UInt64(8*4))
-        let t6 = (UInt64(self.data[self.position + 5]) << UInt64(8*5))
-        let t7 = (UInt64(self.data[self.position + 6]) << UInt64(8*6))
-        let t8 = (UInt64(self.data[self.position + 7]) << UInt64(8*7))
-        
-        return t1 + t2 + t3 + t4 + t5 + t6 + t7 + t8
+        var value: UInt64 = 0
+        for i in 0..<8 { value += UInt64(self.data[self.position + i]) << UInt64(8*i) }
+        return value
     }
     
-    func peekUInt8() -> UInt8 {
+    public func peekUInt8() -> UInt8 {
         return self.data[self.position]
     }
-    func peekUInt16() -> UInt16 {
-        return UInt16(self.data[self.position]) +
-        UInt16(self.data[self.position + 1]) << 8
+    public func peekUInt16() -> UInt16 {
+        defer { position -= 2 }
+        return self.readUInt16()
     }
-    func peekUInt32() -> UInt32 {
-        return UInt32(self.data[self.position]) +
-        UInt32(self.data[self.position + 1]) << 8 +
-        UInt32(self.data[self.position + 2]) << 16 +
-        UInt32(self.data[self.position + 3]) << 24
+    public func peekUInt32() -> UInt32 {
+        defer { position -= 4 }
+        return self.readUInt32()
+    }
+    public func peekUInt64() -> UInt64 {
+        defer { position -= 8 }
+        return self.readUInt64()
     }
 
-    func readUInt() throws -> UInt {
+    public func readUInt() throws -> UInt {
         var num: UInt = 0
         var mult: UInt = 1
         let len = self.data.count
@@ -112,8 +98,14 @@ final class Lib0Decoder {
         }
         throw Lib0DecoderError.unexpectedEndOfArray
     }
+    public func peekUInt() throws -> UInt {
+        let pos = self.position
+        let s = try self.readUInt()
+        self.position = pos
+        return s
+    }
 
-    func readInt() throws -> Int {
+    public func readInt() throws -> Int {
         var r = Int(self.data[self.position])
         self.position += 1
         var num = r & 0b0011_1111
@@ -133,14 +125,14 @@ final class Lib0Decoder {
         }
         throw Lib0DecoderError.unexpectedEndOfArray
     }
-    func peekUInt() throws -> UInt {
+    public func peekInt() throws -> Int {
         let pos = self.position
-        let s = try self.readUInt()
+        let s = try self.readInt()
         self.position = pos
         return s
     }
     
-    func readString() throws -> String {
+    public func readString() throws -> String {
         let data = try self.readVarData()
         guard let string = String(data: data, encoding: .utf8) else {
             throw Lib0DecoderError.unkownStringEncodingType
@@ -148,14 +140,14 @@ final class Lib0Decoder {
         return string
     }
 
-    func readFloat() -> Float {
+    public func readFloat() -> Float {
         let bigEndianValue = readData(count: 4).reversed().withUnsafeBytes{ ptr in
             ptr.baseAddress!.withMemoryRebound(to: UInt32.self, capacity: 1) { $0.pointee }
         }
         return Float(bitPattern: bigEndianValue)
     }
     
-    func readDouble() -> Double {
+    public func readDouble() -> Double {
         let bigEndianValue = readData(count: 8).reversed().withUnsafeBytes{ ptr in
             ptr.baseAddress!.withMemoryRebound(to: UInt64.self, capacity: 1) { $0.pointee }
         }
@@ -163,7 +155,7 @@ final class Lib0Decoder {
         return Double(bitPattern: bigEndianValue)
     }
         
-    func readAny() throws -> Any {
+    public func readAny() throws -> Any {
         let type = self.readUInt8()
         
         switch type {
