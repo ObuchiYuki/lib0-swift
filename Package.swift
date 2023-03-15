@@ -6,11 +6,11 @@ import PackageDescription
 let package = Package(
     name: "lib0-swift",
     products: [
-        .library(name: "lib0-swift", targets: ["lib0-swift"])
+        .library(name: "lib0", targets: ["lib0"])
     ],
     dependencies: [],
     targets: [
-        .target(name: "lib0-swift", dependencies: []),
-        .testTarget(name: "lib0-swiftTests", dependencies: ["lib0-swift"])
+        .target(name: "lib0", dependencies: []),
+        .testTarget(name: "lib0-Tests", dependencies: ["lib0"])
     ]
 )
