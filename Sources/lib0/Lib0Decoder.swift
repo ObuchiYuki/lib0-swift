@@ -226,7 +226,7 @@ public class Lib0UintOptRleDecoder {
     }
 }
 
-public class IncUintOptRleDecoder {
+public class Lib0IncUintOptRleDecoder {
     private let decoder: Lib0Decoder
     private var state = 0
     private var count: UInt = 0
@@ -250,7 +250,7 @@ public class IncUintOptRleDecoder {
     }
 }
 
-public class IntDiffOptRleDecoder {
+public class Lib0IntDiffOptRleDecoder {
     private let decoder: Lib0Decoder
     private var state = 0
     private var count: UInt = 0
@@ -275,7 +275,7 @@ public class IntDiffOptRleDecoder {
     }
 }
 
-public class StringDecoder {
+public class Lib0StringDecoder {
     private let decoder: Lib0UintOptRleDecoder
     private var str: String
     private var spos = 0
