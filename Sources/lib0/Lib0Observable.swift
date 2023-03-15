@@ -7,7 +7,7 @@
 
 import Foundation
 
-public class Observable {
+open class Lib0Observable {
     public struct Event<Arguments> {
         let name: String
         public init(_ name: String) { self.name = name }
