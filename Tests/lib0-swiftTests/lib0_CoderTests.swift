@@ -1,7 +1,7 @@
 import XCTest
 @testable import lib0_swift
 
-final class lib0_swiftTests: XCTestCase {
+final class lib0_CoderTests: XCTestCase {
     func testFixedInteger() {
         // UInt8
         for _ in 0..<100 {
