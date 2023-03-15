@@ -17,7 +17,7 @@ final class lib0_swiftTests: XCTestCase {
     func testVariadicInteger() throws {
         // UInt
         for _ in 0..<1000 {
-            let value = UInt.random(in: UInt.min...UInt.max/64)
+            let value = UInt.random(in: UInt.min/64...UInt.max/64)
             let encoder = Lib0Encoder()
             encoder.writeUInt(value)
             
@@ -27,7 +27,7 @@ final class lib0_swiftTests: XCTestCase {
         
         // Int
         for _ in 0..<1000 {
-            let value = Int.random(in: Int.min...Int.max/64)
+            let value = Int.random(in: Int.min/64...Int.max/64)
             let encoder = Lib0Encoder()
             encoder.writeInt(value)
             

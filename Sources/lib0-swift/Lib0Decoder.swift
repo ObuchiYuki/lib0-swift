@@ -178,7 +178,7 @@ public class Lib0IntDiffDecoder {
 public class Lib0RleIntDiffDecoder {
     private let decoder: Lib0Decoder
     private var state: Int
-    private var count: UInt = 0
+    private var count: Int = 0
     
     public init(data: Data, start: Int) {
         self.decoder = Lib0Decoder(data: data)
@@ -189,7 +189,7 @@ public class Lib0RleIntDiffDecoder {
         if self.count == 0 {
             self.state += try self.decoder.readInt()
             if self.decoder.hasContent {
-                self.count = try self.decoder.readUInt() + 1
+                self.count = Int(try self.decoder.readUInt() + 1)
             } else {
                 self.count = -1
             }

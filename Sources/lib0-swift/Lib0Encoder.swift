@@ -155,3 +155,187 @@ public final class Lib0Encoder {
         }
     }
 }
+
+public class Lib0RleEncoder {
+    private let encoder = Lib0Encoder()
+    private var state: UInt8? = nil
+    private var count: UInt = 0
+
+    public init() {}
+
+    public func write(_ value: UInt8) {
+        if self.state == value as UInt8? {
+            self.count += 1
+        } else {
+            if self.count > 0 {
+                self.encoder.writeUInt(self.count - 1)
+            }
+            self.count = 1
+            self.encoder.writeUInt8(value)
+            self.state = value
+        }
+    }
+}
+
+public class Lib0IntDiffEncoder {
+    private let encoder = Lib0Encoder()
+    private var state: Int
+
+    public init(start: Int) {
+        self.state = start
+    }
+
+    public func write(_ value: Int) {
+        self.encoder.writeInt(value - self.state)
+        self.state = value
+    }
+}
+
+public class Lib0RleIntDiffEncoder {
+    private let encoder = Lib0Encoder()
+    private var state: Int
+    private var count: UInt
+    
+    public init(start: Int) {
+        self.state = start
+        self.count = 0
+    }
+
+    public func write(_ value: Int) {
+        if self.state == value && self.count > 0 {
+            self.count += 1
+        } else {
+            if self.count > 0 {
+                self.encoder.writeUInt(self.count - 1)
+            }
+            self.count = 1
+            self.encoder.writeInt(state - self.state)
+            self.state = value
+        }
+    }
+}
+
+private protocol Lib0UIntOptRleEncoderType {
+    var count: UInt { get }
+    var state: Int { get }
+    var encoder: Lib0Encoder { get }
+}
+
+extension Lib0UIntOptRleEncoderType {
+    func flush() {
+        if self.count > 0 {
+            self.encoder.writeInt(self.count == 1 ? self.state : -self.state)
+            if self.count > 1 {
+                self.encoder.writeUInt(self.count - 2)
+            }
+        }
+    }
+}
+
+public class Lib0UintOptRleEncoder: Lib0UIntOptRleEncoderType {
+    fileprivate var encoder = Lib0Encoder()
+    fileprivate var state = 0
+    fileprivate var count: UInt = 0
+
+    public init() {}
+
+    public func write(_ value: Int) {
+        if self.state == value {
+            self.count += 1
+        } else {
+            self.flush()
+            self.count = 1
+            self.state = value
+        }
+    }
+
+    public var data: Data {
+        self.flush()
+        return self.encoder.data
+    }
+}
+
+public class Lib0IncUintOptRleEncoder: Lib0UIntOptRleEncoderType {
+    fileprivate let encoder = Lib0Encoder()
+    fileprivate var state = 0
+    fileprivate var count: UInt = 0
+    
+    public init() {}
+
+    public func write(_ value: Int) {
+        if self.state + Int(self.count) == value {
+            self.count += 1
+        } else {
+            self.flush()
+            self.count = 1
+            self.state = value
+        }
+    }
+
+    public var data: Data {
+        self.flush()
+        return self.encoder.data
+    }
+}
+
+public class Lib0IntDiffOptRleEncoder {
+    private let encoder = Lib0Encoder()
+    private var state = 0
+    private var count: UInt = 0
+    private var diff = 0
+
+    public init() {}
+
+    public func write(_ value: Int) {
+        if self.diff == value - self.state {
+            self.state = value
+            self.count += 1
+        } else {
+            self.flush()
+            self.count = 1
+            self.diff = value - self.state
+            self.state = value
+        }
+    }
+    
+    private func flush() {
+        if self.count > 0 {
+            let encodedDiff = self.diff * 2 + (self.count == 1 ? 0 : 1)
+            self.encoder.writeInt(encodedDiff)
+            if self.count > 1 {
+                self.encoder.writeUInt(self.count - 2)
+            }
+        }
+    }
+
+    public var data: Data {
+        self.flush()
+        return self.encoder.data
+    }
+}
+
+public class Lib0StringEncoder {
+    private var sarr: [String] = []
+    private var s = ""
+    private var lensE = Lib0UintOptRleEncoder()
+
+    public init() {}
+
+    public func write(_ string: String) {
+        self.s += string
+        if self.s.count > 19 {
+            self.sarr.append(self.s)
+            self.s = ""
+        }
+        self.lensE.write(string.count)
+    }
+
+    public var data: Data {
+        let encoder = Lib0Encoder()
+        self.sarr.append(self.s)
+        self.s = ""
+        encoder.writeString(self.sarr.joined())
+        encoder.writeData(self.lensE.data)
+        return encoder.data
+    }
+}
