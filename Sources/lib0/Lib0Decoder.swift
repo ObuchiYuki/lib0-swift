@@ -208,7 +208,7 @@ public class Lib0UintOptRleDecoder {
         self.decoder = Lib0Decoder(data: data)
     }
 
-    public func read() throws -> Int {
+    public func read() throws -> UInt {
         if self.count == 0 {
             self.state = try self.decoder.readInt()
             self.count = 1
@@ -218,7 +218,7 @@ public class Lib0UintOptRleDecoder {
             }
         }
         self.count -= 1
-        return self.state
+        return UInt(self.state)
     }
     
     public func readString() throws -> String {
@@ -235,7 +235,7 @@ public class Lib0IncUintOptRleDecoder {
         self.decoder = Lib0Decoder(data: data)
     }
 
-    public func read() throws -> Int {
+    public func read() throws -> UInt {
         if self.count == 0 {
             self.state = try self.decoder.readInt()
             self.count = 1
@@ -246,7 +246,7 @@ public class Lib0IncUintOptRleDecoder {
         }
         self.count -= 1
         defer { self.state += 1 }
-        return self.state
+        return UInt(self.state)
     }
 }
 
@@ -278,7 +278,7 @@ public class Lib0IntDiffOptRleDecoder {
 public class Lib0StringDecoder {
     private let decoder: Lib0UintOptRleDecoder
     private var str: String
-    private var spos = 0
+    private var spos: UInt = 0
 
     public init(data: Data) throws {
         self.decoder = Lib0UintOptRleDecoder(data: data)
@@ -290,9 +290,9 @@ public class Lib0StringDecoder {
         
         // TODO: Swift should not be use String subscript.
         let res = String(self.str[
-            self.str.index(self.str.startIndex, offsetBy: self.spos)
+            self.str.index(self.str.startIndex, offsetBy: Int(self.spos))
             ..<
-            self.str.index(self.str.startIndex, offsetBy: end)
+            self.str.index(self.str.startIndex, offsetBy: Int(end))
         ])
         self.spos = end
         return res
