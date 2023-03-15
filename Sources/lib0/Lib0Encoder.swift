@@ -223,14 +223,14 @@ public class Lib0RleIntDiffEncoder {
 
 private protocol Lib0UIntOptRleEncoderType {
     var count: UInt { get }
-    var state: Int { get }
+    var state: UInt { get }
     var encoder: Lib0Encoder { get }
 }
 
 extension Lib0UIntOptRleEncoderType {
     func flush() {
         if self.count > 0 {
-            self.encoder.writeInt(self.count == 1 ? self.state : -self.state)
+            self.encoder.writeInt(self.count == 1 ? Int(self.state) : -Int(self.state))
             if self.count > 1 {
                 self.encoder.writeUInt(self.count - 2)
             }
@@ -240,12 +240,12 @@ extension Lib0UIntOptRleEncoderType {
 
 public class Lib0UintOptRleEncoder: Lib0UIntOptRleEncoderType {
     fileprivate var encoder = Lib0Encoder()
-    fileprivate var state = 0
+    fileprivate var state: UInt = 0
     fileprivate var count: UInt = 0
 
     public init() {}
 
-    public func write(_ value: Int) {
+    public func write(_ value: UInt) {
         if self.state == value {
             self.count += 1
         } else {
@@ -263,13 +263,13 @@ public class Lib0UintOptRleEncoder: Lib0UIntOptRleEncoderType {
 
 public class Lib0IncUintOptRleEncoder: Lib0UIntOptRleEncoderType {
     fileprivate let encoder = Lib0Encoder()
-    fileprivate var state = 0
+    fileprivate var state: UInt = 0
     fileprivate var count: UInt = 0
     
     public init() {}
 
-    public func write(_ value: Int) {
-        if self.state + Int(self.count) == value {
+    public func write(_ value: UInt) {
+        if self.state + self.count == value {
             self.count += 1
         } else {
             self.flush()
@@ -333,7 +333,7 @@ public class Lib0StringEncoder {
             self.sarr.append(self.s)
             self.s = ""
         }
-        self.lensE.write(string.count)
+        self.lensE.write(UInt(string.count))
     }
 
     public var data: Data {
