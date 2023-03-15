@@ -8,7 +8,7 @@
 import Foundation
 
 open class Lib0Observable {
-    public struct Event<Arguments> {
+    public struct EventName<Arguments> {
         let name: String
         public init(_ name: String) { self.name = name }
     }
@@ -21,12 +21,12 @@ open class Lib0Observable {
     
     public init() {}
     
-    public func isObserving<Args>(_ event: Event<Args>) -> Bool {
+    public func isObserving<Args>(_ event: EventName<Args>) -> Bool {
         return self._observers[event.name] != nil
     }
 
     @discardableResult
-    public func on<Args>(_ event: Event<Args>, _ observer: @escaping (Args) -> Void) -> Disposer {
+    public func on<Args>(_ event: EventName<Args>, _ observer: @escaping (Args) -> Void) -> Disposer {
         if (self._observers[event.name] == nil) { self._observers[event.name] = [:] }
         let disposer = Disposer()
         self._observers[event.name]![disposer.id] = { value in
@@ -35,14 +35,14 @@ open class Lib0Observable {
         return disposer
     }
 
-    public func off<Args>(_ event: Event<Args>, _ disposer: Disposer) {
+    public func off<Args>(_ event: EventName<Args>, _ disposer: Disposer) {
         self._observers[event.name]?.removeValue(forKey: disposer.id)
         if self._observers[event.name]?.isEmpty ?? false {
             self._observers.removeValue(forKey: event.name)
         }
     }
 
-    public func emit<Args>(_ event: Event<Args>, _ args: Args) {
+    public func emit<Args>(_ event: EventName<Args>, _ args: Args) {
         guard let listeners = self._observers[event.name] else { return }
         listeners.forEach{ $0.value(args) }
     }
