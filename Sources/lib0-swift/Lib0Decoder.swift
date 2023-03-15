@@ -34,52 +34,12 @@ public final class Lib0Decoder {
         let count = try Int(self.readUInt())
         return self.readData(count: count)
     }
-    public func readTailAsData() -> Data {
-        return self.readData(count: data.count - position)
-    }
     
-    public func skip8() {
-        self.position += 1
-    }
     public func readUInt8() -> UInt8 {
         defer { self.position += 1 }
         return self.data[self.position]
     }
-    public func readUInt16() -> UInt16 {
-        defer { self.position += 2 }
-        var value: UInt16 = 0
-        for i in 0..<2 { value += UInt16(self.data[self.position + i]) << UInt16(8*i) }
-        return value
-    }
-    public func readUInt32() -> UInt32 {
-        defer { self.position += 4 }
-        var value: UInt32 = 0
-        for i in 0..<4 { value += UInt32(self.data[self.position + i]) << UInt32(8*i) }
-        return value
-    }
-    public func readUInt64() -> UInt64 {
-        defer { self.position += 8 }
-        var value: UInt64 = 0
-        for i in 0..<8 { value += UInt64(self.data[self.position + i]) << UInt64(8*i) }
-        return value
-    }
     
-    public func peekUInt8() -> UInt8 {
-        return self.data[self.position]
-    }
-    public func peekUInt16() -> UInt16 {
-        defer { position -= 2 }
-        return self.readUInt16()
-    }
-    public func peekUInt32() -> UInt32 {
-        defer { position -= 4 }
-        return self.readUInt32()
-    }
-    public func peekUInt64() -> UInt64 {
-        defer { position -= 8 }
-        return self.readUInt64()
-    }
-
     public func readUInt() throws -> UInt {
         var num: UInt = 0
         var mult: UInt = 1
@@ -97,12 +57,6 @@ public final class Lib0Decoder {
             if (r < 0b1000_0000) { return num }
         }
         throw Lib0DecoderError.unexpectedEndOfArray
-    }
-    public func peekUInt() throws -> UInt {
-        let pos = self.position
-        let s = try self.readUInt()
-        self.position = pos
-        return s
     }
 
     public func readInt() throws -> Int {
@@ -124,12 +78,6 @@ public final class Lib0Decoder {
             if (r < 0b1000_0000) { return sign * num }
         }
         throw Lib0DecoderError.unexpectedEndOfArray
-    }
-    public func peekInt() throws -> Int {
-        let pos = self.position
-        let s = try self.readInt()
-        self.position = pos
-        return s
     }
     
     public func readString() throws -> String {
@@ -184,5 +132,169 @@ public final class Lib0Decoder {
             return array
         default: return Optional<Void>.none as Any
         }
+    }
+}
+
+public class Lib0RleDecoder {
+    private let decoder: Lib0Decoder
+    private var state: UInt8? = nil
+    private var count = 0
+
+    public init(data: Data) {
+        self.decoder = Lib0Decoder(data: data)
+        self.state = nil
+        self.count = 0
+    }
+
+    public func read() throws -> UInt8 {
+        if self.count == 0 {
+            self.state = self.decoder.readUInt8()
+            if self.decoder.hasContent {
+                self.count = Int(try self.decoder.readUInt()) + 1
+            } else {
+                self.count = -1
+            }
+        }
+        self.count -= 1
+        return self.state!
+    }
+}
+
+public class Lib0IntDiffDecoder {
+    private let decoder: Lib0Decoder
+    private var state: Int
+
+    public init(data: Data, start: Int) {
+        self.decoder = Lib0Decoder(data: data)
+        self.state = start
+    }
+
+    public func read() throws -> Int {
+        self.state += try self.decoder.readInt()
+        return self.state
+    }
+}
+
+public class Lib0RleIntDiffDecoder {
+    private let decoder: Lib0Decoder
+    private var state: Int
+    private var count: UInt = 0
+    
+    public init(data: Data, start: Int) {
+        self.decoder = Lib0Decoder(data: data)
+        self.state = start
+    }
+
+    public func read() throws -> Int {
+        if self.count == 0 {
+            self.state += try self.decoder.readInt()
+            if self.decoder.hasContent {
+                self.count = try self.decoder.readUInt() + 1
+            } else {
+                self.count = -1
+            }
+        }
+        self.count -= 1
+        return self.state
+    }
+}
+
+public class Lib0UintOptRleDecoder {
+    private let decoder: Lib0Decoder
+    private var state = 0
+    private var count: UInt = 0
+
+    public init(data: Data) {
+        self.decoder = Lib0Decoder(data: data)
+    }
+
+    public func read() throws -> Int {
+        if self.count == 0 {
+            self.state = try self.decoder.readInt()
+            self.count = 1
+            if self.state < 0 {
+                self.state = -self.state
+                self.count = try self.decoder.readUInt() + 2
+            }
+        }
+        self.count -= 1
+        return self.state
+    }
+    
+    public func readString() throws -> String {
+        return try self.decoder.readString()
+    }
+}
+
+public class IncUintOptRleDecoder {
+    private let decoder: Lib0Decoder
+    private var state = 0
+    private var count: UInt = 0
+
+    public init(data: Data) {
+        self.decoder = Lib0Decoder(data: data)
+    }
+
+    public func read() throws -> Int {
+        if self.count == 0 {
+            self.state = try self.decoder.readInt()
+            self.count = 1
+            if self.state < 0 {
+                self.state = -self.state
+                self.count = try self.decoder.readUInt() + 2
+            }
+        }
+        self.count -= 1
+        defer { self.state += 1 }
+        return self.state
+    }
+}
+
+public class IntDiffOptRleDecoder {
+    private let decoder: Lib0Decoder
+    private var state = 0
+    private var count: UInt = 0
+    private var diff = 0
+
+    public init(data: Data) {
+        self.decoder = Lib0Decoder(data: data)
+    }
+
+    public func read() throws -> Int {
+        if self.count == 0 {
+            let diff = try self.decoder.readInt()
+            self.diff = diff >> 1
+            self.count = 1
+            if diff & 1 != 0 {
+                self.count = try self.decoder.readUInt() + 2
+            }
+        }
+        self.state += self.diff
+        self.count -= 1
+        return self.state
+    }
+}
+
+public class StringDecoder {
+    private let decoder: Lib0UintOptRleDecoder
+    private var str: String
+    private var spos = 0
+
+    public init(data: Data) throws {
+        self.decoder = Lib0UintOptRleDecoder(data: data)
+        self.str = try self.decoder.readString()
+    }
+
+    public func read() throws -> String {
+        let end = try self.spos + self.decoder.read()
+        
+        // TODO: Swift should not be use String subscript.
+        let res = String(self.str[
+            self.str.index(self.str.startIndex, offsetBy: self.spos)
+            ..<
+            self.str.index(self.str.startIndex, offsetBy: end)
+        ])
+        self.spos = end
+        return res
     }
 }

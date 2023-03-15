@@ -12,36 +12,6 @@ final class lib0_swiftTests: XCTestCase {
             let decoder = Lib0Decoder(data: encoder.data)
             XCTAssertEqual(decoder.readUInt8(), value)
         }
-        
-        // UInt16
-        for _ in 0..<100 {
-            let value = UInt16.random(in: UInt16.min...UInt16.max)
-            let encoder = Lib0Encoder()
-            encoder.writeUInt16(value)
-            
-            let decoder = Lib0Decoder(data: encoder.data)
-            XCTAssertEqual(decoder.readUInt16(), value)
-        }
-        
-        // UInt32
-        for _ in 0..<100 {
-            let value = UInt32.random(in: UInt32.min...UInt32.max)
-            let encoder = Lib0Encoder()
-            encoder.writeUInt32(value)
-            
-            let decoder = Lib0Decoder(data: encoder.data)
-            XCTAssertEqual(decoder.readUInt32(), value)
-        }
-        
-        // UInt64
-        for _ in 0..<100 {
-            let value = UInt64.random(in: UInt64.min...UInt64.max)
-            let encoder = Lib0Encoder()
-            encoder.writeUInt64(value)
-            
-            let decoder = Lib0Decoder(data: encoder.data)
-            XCTAssertEqual(decoder.readUInt64(), value)
-        }
     }
     
     func testVariadicInteger() throws {
@@ -57,7 +27,7 @@ final class lib0_swiftTests: XCTestCase {
         
         // Int
         for _ in 0..<1000 {
-            let value = Int.random(in: Int.min/64...Int.max/64)
+            let value = Int.random(in: Int.min...Int.max/64)
             let encoder = Lib0Encoder()
             encoder.writeInt(value)
             

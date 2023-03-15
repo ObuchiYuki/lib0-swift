@@ -47,63 +47,6 @@ public final class Lib0Encoder {
         self.currentBuffer[self.currentBufferPosition] = value
         self.currentBufferPosition += 1
     }
-    public func setUInt8(_ value: UInt8, at position: Int) {
-        assert(self.count < position)
-        
-        var position = position
-        var foundBufferIndex = -1
-        for (i, buffer) in buffers.enumerated() {
-            if (position < buffer.count) {
-                foundBufferIndex = i
-            } else {
-                position -= buffer.count
-            }
-        }
-        if foundBufferIndex == -1 {
-            self.currentBuffer[position] = value
-        } else {
-            self.buffers[foundBufferIndex][position] = value
-        }
-    }
-
-    public func writeUInt16(_ value: UInt16) {
-        self.writeUInt8(UInt8(value >> 0 & 0b1111_1111))
-        self.writeUInt8(UInt8(value >> 8 & 0b1111_1111))
-    }
-    public func setUint16(_ value: UInt16, at position: Int) {
-        self.setUInt8(UInt8((value >> 0) & 0b1111_1111), at: position + 0)
-        self.setUInt8(UInt8((value >> 8) & 0b1111_1111), at: position + 1)
-    }
-
-    public func writeUInt32(_ value: UInt32) {
-        var value = value
-        for _ in 0..<4 {
-            self.writeUInt8(UInt8(value & 0b1111_1111))
-            value >>= 8
-        }
-    }
-    public func setUInt32(_ value: UInt32, at position: Int) {
-        var value = value
-        for i in 0..<4 {
-            self.setUInt8(UInt8(value & 0b1111_1111), at: position + i)
-            value >>= 8
-        }
-    }
-    
-    public func writeUInt64(_ value: UInt64) {
-        var value = value
-        for _ in 0..<8 {
-            self.writeUInt8(UInt8(value & 0b1111_1111))
-            value >>= 8
-        }
-    }
-    public func setUInt64(_ value: UInt64, at position: Int) {
-        var value = value
-        for i in 0..<8 {
-            self.setUInt8(UInt8(value & 0b1111_1111), at: position + i)
-            value >>= 8
-        }
-    }
 
     public func writeUInt(_ value: UInt) {
         var value = value
@@ -113,6 +56,7 @@ public final class Lib0Encoder {
         }
         self.writeUInt8(UInt8(0b0111_1111 & value))
     }
+    
     public func writeInt(_ value: Int) {
         var value = value
         let isNegative = value < 0
@@ -207,10 +151,6 @@ public final class Lib0Encoder {
         case let data as Bool:
             self.writeUInt8(data ? 120 : 121)
         default:
-            
-            // TYPE 126: null
-//            self.writeUInt8(126)
-//          // TYPE 126: undefined
             self.writeUInt8(127)
         }
     }
