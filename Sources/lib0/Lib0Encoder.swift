@@ -162,6 +162,8 @@ public class Lib0RleEncoder {
     private var count: UInt = 0
 
     public init() {}
+    
+    public var data: Data { encoder.data }
 
     public func write(_ value: UInt8) {
         if self.state == value as UInt8? {
@@ -181,6 +183,8 @@ public class Lib0IntDiffEncoder {
     private let encoder = Lib0Encoder()
     private var state: Int
 
+    public var data: Data { encoder.data }
+    
     public init(start: Int) {
         self.state = start
     }
@@ -195,6 +199,8 @@ public class Lib0RleIntDiffEncoder {
     private let encoder = Lib0Encoder()
     private var state: Int
     private var count: UInt
+    
+    public var data: Data { encoder.data }
     
     public init(start: Int) {
         self.state = start
