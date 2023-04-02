@@ -38,6 +38,7 @@ public class LZObservable {
         return disposer
     }
     
+    @available(macOS 10.15, *)
     public func publisher<Args>(for event: EventName<Args>) -> some Publisher<Args, Never> {
         if let publisher = self._pubilshers[event.name] {
             return publisher as! PassthroughSubject<Args, Never>

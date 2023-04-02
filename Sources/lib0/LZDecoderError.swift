@@ -12,12 +12,6 @@ public struct LZDecoderError: LocalizedError {
     
     init(_ message: String) {
         self.errorDescription = message
-        
-        #if DEBUG
-        if __isTesting {
-            print(Backtrace(dropFirstSymbols: 5))
-        }
-        #endif
     }
     
     static let integerOverflow = LZDecoderError("Integer overflow.")
