@@ -8,7 +8,7 @@
 import Foundation
 import Combine
 
-public class LZObservable {
+open class LZObservable {
     public struct EventName<Arguments> {
         public let name: String
         public init(_ name: String) { self.name = name }
@@ -71,7 +71,7 @@ public class LZObservable {
         listeners.forEach{ $0.value(args) }
     }
     
-    public func destroy() {
+    open func destroy() {
         self._observers = [:]
         self._pubilshers = [:]
     }
