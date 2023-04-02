@@ -1,5 +1,5 @@
 //
-//  Lib0Encoder.swift
+//  LZEncoder.swift
 //  lib0-swift
 //
 //  Created by yuki on 2023/03/09.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-public final class Lib0Encoder {
+public final class LZEncoder {
     private var buffers: [Data] = []
     private var currentBuffer = Data(repeating: 0, count: 100)
     private var currentBufferPosition = 0
@@ -57,9 +57,9 @@ public final class Lib0Encoder {
         self.writeUInt8(UInt8(0b0111_1111 & value))
     }
     
-    public func writeInt(_ value: Int) {
+    public func writeInt(_ value: Int, zeroIsNegative: Bool = false) {
         var value = value
-        let isNegative = value < 0
+        let isNegative = (value == 0 && zeroIsNegative) ? true : value < 0
         if (isNegative) { value = -value }
         
         self.writeUInt8(
@@ -117,7 +117,11 @@ public final class Lib0Encoder {
         }
     }
 
-    public func writeAny(_ data: Any) {
+    public func writeAny(_ data: Any?) {
+        if data == nil || data is NSNull { // null
+            self.writeUInt8(126)
+            return
+        }
         switch (data) {
         case let data as String:
             self.writeUInt8(119)
@@ -150,14 +154,15 @@ public final class Lib0Encoder {
             }
         case let data as Bool:
             self.writeUInt8(data ? 120 : 121)
-        default:
+        default: // undefined
+            assertionFailure("undefined object to code \(data ?? "nil")")
             self.writeUInt8(127)
         }
     }
 }
 
-public class Lib0RleEncoder {
-    private let encoder = Lib0Encoder()
+public class LZRleEncoder {
+    private let encoder = LZEncoder()
     private var state: UInt8? = nil
     private var count: UInt = 0
 
@@ -179,8 +184,8 @@ public class Lib0RleEncoder {
     }
 }
 
-public class Lib0IntDiffEncoder {
-    private let encoder = Lib0Encoder()
+public class LZIntDiffEncoder {
+    private let encoder = LZEncoder()
     private var state: Int
 
     public var data: Data { encoder.data }
@@ -195,8 +200,8 @@ public class Lib0IntDiffEncoder {
     }
 }
 
-public class Lib0RleIntDiffEncoder {
-    private let encoder = Lib0Encoder()
+public class LZRleIntDiffEncoder {
+    private let encoder = LZEncoder()
     private var state: Int
     private var count: UInt
     
@@ -221,16 +226,20 @@ public class Lib0RleIntDiffEncoder {
     }
 }
 
-private protocol Lib0UIntOptRleEncoderType {
+private protocol LZUIntOptRleEncoderType {
     var count: UInt { get }
     var state: UInt { get }
-    var encoder: Lib0Encoder { get }
+    var encoder: LZEncoder { get }
 }
 
-extension Lib0UIntOptRleEncoderType {
+extension LZUIntOptRleEncoderType {
     func flush() {
         if self.count > 0 {
-            self.encoder.writeInt(self.count == 1 ? Int(self.state) : -Int(self.state))
+            if self.count == 1 {
+                self.encoder.writeInt(Int(self.state))
+            } else {
+                self.encoder.writeInt(-Int(self.state), zeroIsNegative: true)
+            }
             if self.count > 1 {
                 self.encoder.writeUInt(self.count - 2)
             }
@@ -238,14 +247,16 @@ extension Lib0UIntOptRleEncoderType {
     }
 }
 
-public class Lib0UintOptRleEncoder: Lib0UIntOptRleEncoderType {
-    fileprivate var encoder = Lib0Encoder()
+public class LZUintOptRleEncoder: LZUIntOptRleEncoderType {
+    fileprivate var encoder = LZEncoder()
     fileprivate var state: UInt = 0
     fileprivate var count: UInt = 0
+    fileprivate var mutated = false
 
     public init() {}
 
     public func write(_ value: UInt) {
+        self.mutated = true
         if self.state == value {
             self.count += 1
         } else {
@@ -256,13 +267,16 @@ public class Lib0UintOptRleEncoder: Lib0UIntOptRleEncoderType {
     }
 
     public var data: Data {
-        self.flush()
+        if self.mutated {
+            self.flush()
+            self.mutated = false
+        }
         return self.encoder.data
     }
 }
 
-public class Lib0IncUintOptRleEncoder: Lib0UIntOptRleEncoderType {
-    fileprivate let encoder = Lib0Encoder()
+public class LZIncUintOptRleEncoder: LZUIntOptRleEncoderType {
+    fileprivate let encoder = LZEncoder()
     fileprivate var state: UInt = 0
     fileprivate var count: UInt = 0
     
@@ -284,11 +298,11 @@ public class Lib0IncUintOptRleEncoder: Lib0UIntOptRleEncoderType {
     }
 }
 
-public class Lib0IntDiffOptRleEncoder {
-    private let encoder = Lib0Encoder()
-    private var state = 0
-    private var count: UInt = 0
-    private var diff = 0
+public class LZIntDiffOptRleEncoder {
+    let encoder = LZEncoder()
+    var state = 0
+    var count: UInt = 0
+    var diff = 0
 
     public init() {}
 
@@ -320,28 +334,40 @@ public class Lib0IntDiffOptRleEncoder {
     }
 }
 
-public class Lib0StringEncoder {
-    private var sarr: [String] = []
-    private var s = ""
-    private var lensE = Lib0UintOptRleEncoder()
+public class LZStringEncoder {
+    private var sarr: [NSString] = []
+    private var s = NSMutableString()
+    private var lensE = LZUintOptRleEncoder()
 
     public init() {}
 
     public func write(_ string: String) {
-        self.s += string
-        if self.s.count > 19 {
+        let nsstring = string as NSString
+        self.s.append(string)
+        if self.s.length > 19 {
             self.sarr.append(self.s)
-            self.s = ""
+            self.s = NSMutableString()
         }
-        self.lensE.write(UInt(string.count))
+        self.lensE.write(UInt(nsstring.length))
     }
 
     public var data: Data {
-        let encoder = Lib0Encoder()
+        let encoder = LZEncoder()
         self.sarr.append(self.s)
-        self.s = ""
-        encoder.writeString(self.sarr.joined())
-        encoder.writeData(self.lensE.data)
+        self.s = NSMutableString()
+                
+        encoder.writeString(self.sarr.joined() as String)
+        encoder.writeOpaqueSizeData(self.lensE.data)
         return encoder.data
+    }
+}
+
+extension Array where Element == NSString {
+    fileprivate func joined() -> NSString {
+        let base = NSMutableString()
+        for str in self {
+            base.append(str as String)
+        }
+        return base
     }
 }
