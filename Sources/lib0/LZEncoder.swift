@@ -135,7 +135,7 @@ public final class LZEncoder {
         case let data as Double:
             self.writeUInt8(123)
             self.writeDouble(data)
-        case let data as [String: Any]:
+        case let data as [String: Any?]:
             self.writeUInt8(118)
             self.writeUInt(UInt(data.count))
             for (key, value) in data {
@@ -146,7 +146,7 @@ public final class LZEncoder {
             self.writeUInt8(116)
             self.writeData(data)
             
-        case let data as [Any]:
+        case let data as [Any?]:
             self.writeUInt8(117)
             self.writeUInt(UInt(data.count))
             for element in data {
