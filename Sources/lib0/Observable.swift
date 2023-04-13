@@ -10,7 +10,7 @@ import Combine
 
 // from CoreUtil (https://github.com/ObuchiYuki/CoreUtil) 's Observable
 @propertyWrapper
-public struct LZObservableProperty<Value> {
+public struct LZObservable<Value> {
     @inlinable public var projectedValue: some Publisher<Value, Never> { subject }
     
     @usableFromInline let subject: CurrentValueSubject<Value, Never>

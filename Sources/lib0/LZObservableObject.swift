@@ -8,7 +8,7 @@
 import Foundation
 import Combine
 
-open class LZObservable {
+open class LZObservableObject {
     public struct EventName<Arguments> {
         public let name: String
         public init(_ name: String) { self.name = name }
