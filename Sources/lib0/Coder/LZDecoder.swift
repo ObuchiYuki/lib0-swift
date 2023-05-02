@@ -149,6 +149,7 @@ public final class LZDecoder {
                 array.append(try self.readAny())
             }
             return array
+        case 116: return try readData()
         default:
             assertionFailure("yswift should not be have undefined. (\(type))")
             return NSNull()

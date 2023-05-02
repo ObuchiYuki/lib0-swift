@@ -19,4 +19,5 @@ public struct LZDecoderError: LocalizedError {
     static let unkownStringEncodingType = LZDecoderError("Unkown string encoding type.")
     static let useOfBigintType = LZDecoderError("Swift has no bigint type.")
     static let typeMissmatch = LZDecoderError("Type missmatch.")
+    static let unexpectedCase = LZDecoderError("Unexpected case.")
 }
